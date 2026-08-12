@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { PriorityBadge } from '@/components/common/PriorityBadge'
+import { PresenceBadge } from '@/components/staff/PresenceBadge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useIsMobile } from '@/hooks/useMediaQuery'
 import { useTaskList } from '@/hooks/useTasks'
@@ -48,9 +49,12 @@ export function StaffDetailModal({ staff, onOpenChange }: StaffDetailModalProps)
         <div className="min-w-0 flex-1">
           <p className="truncate text-lg font-bold text-ink-900">{staff.name}</p>
           <p className="text-sm text-ink-500">{staff.employeeId} · {staff.designation}</p>
-          <Badge variant={staff.status === 'ACTIVE' ? 'success' : 'neutral'} dot className="mt-1.5">
-            {staff.status === 'ACTIVE' ? 'Active' : 'Inactive'}
-          </Badge>
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <Badge variant={staff.status === 'ACTIVE' ? 'success' : 'neutral'} dot>
+              {staff.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+            </Badge>
+            <PresenceBadge status={staff.presenceStatus} />
+          </div>
         </div>
       </div>
 

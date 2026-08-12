@@ -1,16 +1,18 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
 import { AlertCircle, Mail, User, Lock } from 'lucide-react'
+import type HCaptcha from '@hcaptcha/react-hcaptcha'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { PasswordInput } from '@/components/forms/PasswordInput'
+import Captcha from '@/components/ui/Captcha'
 import { AuthSplitLayout, AuthCard } from '@/components/auth/AuthSplitLayout'
 import { passwordSchema } from '@/lib/password'
-import { delay } from '@/lib/authMock'
+import { submitAdminSignupRequest } from '@/api/signup'
 
 const signupSchema = z
   .object({
@@ -29,6 +31,9 @@ type SignupFormValues = z.infer<typeof signupSchema>
 export default function AdminSignup() {
   const navigate = useNavigate()
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaError, setCaptchaError] = useState<string | null>(null)
+  const captchaRef = useRef<HCaptcha>(null)
 
   const {
     register,
@@ -38,13 +43,22 @@ export default function AdminSignup() {
 
   const onSubmit = async (values: SignupFormValues) => {
     setSubmitError(null)
+    // Only enforced when the widget actually rendered (VITE_HCAPTCHA_SITE_KEY
+    // set) — mirrors the backend, which skips verification entirely when
+    // CAPTCHA_SECRET_KEY isn't configured (local dev).
+    if (captchaRef.current && !captchaToken) {
+      setCaptchaError('Please complete the CAPTCHA challenge.')
+      return
+    }
+    setCaptchaError(null)
     try {
-      // Mock only — real account creation + OTP dispatch are wired up once
-      // the backend and SMTP integration land in a later phase.
-      await delay(900)
+      await submitAdminSignupRequest({ ...values, captchaToken: captchaToken ?? undefined })
       navigate('/admin/signup/verify-otp', { state: { email: values.email } })
-    } catch {
-      setSubmitError('Something went wrong. Please try again.')
+    } catch (err) {
+      const apiError = err as { message?: string }
+      setSubmitError(apiError.message ?? 'Something went wrong. Please try again.')
+      captchaRef.current?.resetCaptcha()
+      setCaptchaToken(null)
     }
   }
 
@@ -116,6 +130,16 @@ export default function AdminSignup() {
             placeholder="Re-enter your password"
             error={errors.confirmPassword?.message}
             {...register('confirmPassword')}
+          />
+
+          <Captcha
+            ref={captchaRef}
+            onVerify={(token) => {
+              setCaptchaToken(token)
+              setCaptchaError(null)
+            }}
+            onExpire={() => setCaptchaToken(null)}
+            error={captchaError ?? undefined}
           />
 
           <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>

@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { OtpInput } from '@/components/forms/OtpInput'
 import { AuthCard } from '@/components/auth/AuthSplitLayout'
-import { resendOtpMock, verifyOtpMock } from '@/lib/authMock'
 
 const RESEND_SECONDS = 30
 
@@ -16,8 +15,12 @@ interface OtpVerificationCardProps {
   maskedEmail?: string
   backHref: string
   backLabel: string
-  /** Called once the mock backend accepts the code — the caller decides where to navigate next. */
+  /** Verifies the code against the backend. Throw (or reject) to show an error state. */
+  onVerify: (code: string) => Promise<void>
+  /** Called once the backend accepts the code — the caller decides where to navigate next. */
   onVerified: () => void
+  /** Asks the backend to resend the code. Throw to surface an error toast instead of the success one. */
+  onResend: () => Promise<void>
 }
 
 function formatCountdown(totalSeconds: number): string {
@@ -29,12 +32,19 @@ function formatCountdown(totalSeconds: number): string {
 /**
  * Shared 4-digit OTP verification card: input boxes, resend countdown, and
  * verify/back actions. Used for both the signup and forgot-password flows —
- * only the copy and the `onVerified` destination differ between them.
- *
- * OTP checking is mocked (see `@/lib/authMock`): enter `1234` to simulate a
- * successful verification, or any other 4 digits to see the error state.
+ * only the copy and the `onVerify`/`onResend`/`onVerified` implementations
+ * differ between them.
  */
-export function OtpVerificationCard({ title, description, maskedEmail, backHref, backLabel, onVerified }: OtpVerificationCardProps) {
+export function OtpVerificationCard({
+  title,
+  description,
+  maskedEmail,
+  backHref,
+  backLabel,
+  onVerify,
+  onVerified,
+  onResend,
+}: OtpVerificationCardProps) {
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
@@ -59,24 +69,32 @@ export function OtpVerificationCard({ title, description, maskedEmail, backHref,
     }
     setError(null)
     setIsVerifying(true)
-    const ok = await verifyOtpMock(code)
-    setIsVerifying(false)
-    if (ok) {
+    try {
+      await onVerify(code)
       onVerified()
-    } else {
-      setError('Incorrect code. Please check and try again.')
+    } catch (err) {
+      const apiError = err as { message?: string }
+      setError(apiError.message ?? 'Incorrect code. Please check and try again.')
       setCode('')
+    } finally {
+      setIsVerifying(false)
     }
   }
 
   const handleResend = async () => {
     setIsResending(true)
-    await resendOtpMock()
-    setIsResending(false)
-    setSecondsLeft(RESEND_SECONDS)
-    setCode('')
-    setError(null)
-    toast.success('A new code has been sent', maskedEmail ? { description: `Check ${maskedEmail}` } : undefined)
+    try {
+      await onResend()
+      setSecondsLeft(RESEND_SECONDS)
+      setCode('')
+      setError(null)
+      toast.success('A new code has been sent', maskedEmail ? { description: `Check ${maskedEmail}` } : undefined)
+    } catch (err) {
+      const apiError = err as { message?: string }
+      toast.error(apiError.message ?? 'Could not resend the code. Please try again.')
+    } finally {
+      setIsResending(false)
+    }
   }
 
   return (

@@ -22,6 +22,13 @@ export function useStaffList(params: StaffQueryParams = {}) {
   return useQuery({
     queryKey: staffKeys.list(params),
     queryFn: () => fetchStaff(params),
+    // Presence (Active/Busy/Offline) is staff-set and can change at any
+    // time. There's no push/websocket channel in this app, so short
+    // polling — only while this query is actually mounted — is the
+    // closest thing to "real-time" the existing REST architecture
+    // supports without adding new infra.
+    refetchInterval: 20_000,
+    refetchOnWindowFocus: true,
   })
 }
 
@@ -30,6 +37,8 @@ export function useStaffMember(id: string | null) {
     queryKey: staffKeys.detail(id ?? ''),
     queryFn: () => fetchStaffMember(id as string),
     enabled: Boolean(id),
+    refetchInterval: 20_000,
+    refetchOnWindowFocus: true,
   })
 }
 

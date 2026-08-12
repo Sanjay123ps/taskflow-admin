@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthSplitLayout, AuthCard } from '@/components/auth/AuthSplitLayout'
-import { delay } from '@/lib/authMock'
+import { forgotPassword } from '@/api/auth'
 
 const forgotPasswordSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
@@ -29,11 +29,11 @@ export default function ForgotPassword() {
   const onSubmit = async (values: ForgotPasswordValues) => {
     setSubmitError(null)
     try {
-      // Mock only — real OTP dispatch is wired up once SMTP lands.
-      await delay(900)
+      await forgotPassword(values.email)
       navigate('/admin/forgot-password/verify-otp', { state: { email: values.email } })
-    } catch {
-      setSubmitError('Something went wrong. Please try again.')
+    } catch (err) {
+      const apiError = err as { message?: string }
+      setSubmitError(apiError.message ?? 'Something went wrong. Please try again.')
     }
   }
 

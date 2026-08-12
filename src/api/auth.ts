@@ -1,4 +1,5 @@
-import { apiClient, setAccessToken } from './client'
+import axios from 'axios'
+import { API_BASE_URL, apiClient, setAccessToken } from './client'
 import type { AdminProfile } from '@/types/user'
 
 export interface LoginInput {
@@ -55,4 +56,41 @@ export async function fetchCurrentAdmin(): Promise<AdminProfile> {
   }
 
   return data.data
+}
+
+export interface OtpIssuedResponse {
+  expiresInSeconds: number
+  /** Only present outside production, when SMTP isn't configured. */
+  devOtp?: string
+}
+
+// Forgot Password flow — public endpoints, bare axios (no access token yet,
+// and must never trigger the 401/refresh interceptor).
+
+export async function forgotPassword(email: string): Promise<OtpIssuedResponse> {
+  const { data } = await axios.post<{ success: true; data: OtpIssuedResponse }>(
+    `${API_BASE_URL}/auth/password/forgot`,
+    { email },
+  )
+  return data.data
+}
+
+export async function resendPasswordResetOtp(email: string): Promise<OtpIssuedResponse> {
+  const { data } = await axios.post<{ success: true; data: OtpIssuedResponse }>(
+    `${API_BASE_URL}/auth/password/resend-otp`,
+    { email },
+  )
+  return data.data
+}
+
+export async function verifyPasswordResetOtp(email: string, code: string): Promise<{ resetToken: string }> {
+  const { data } = await axios.post<{ success: true; data: { resetToken: string; expiresInSeconds: number } }>(
+    `${API_BASE_URL}/auth/password/verify-otp`,
+    { email, code },
+  )
+  return data.data
+}
+
+export async function resetPassword(resetToken: string, newPassword: string, confirmPassword: string): Promise<void> {
+  await axios.post(`${API_BASE_URL}/auth/password/reset`, { resetToken, newPassword, confirmPassword })
 }

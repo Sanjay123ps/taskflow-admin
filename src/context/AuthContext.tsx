@@ -1,6 +1,6 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { fetchCurrentAdmin, login as loginRequest, logout as logoutRequest, type LoginInput } from '@/api/auth'
-import { getAccessToken, setAccessToken } from '@/api/client'
+import { refreshAccessToken, setAccessToken } from '@/api/client'
 import type { AdminProfile } from '@/types/user'
 
 interface AuthContextValue {
@@ -20,7 +20,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
 
   const bootstrap = useCallback(async () => {
-    if (!getAccessToken()) {
+    // The access token lives in memory only, so it never survives a page
+    // reload. The only thing that can survive is the httpOnly refresh
+    // cookie, so on first load we try to exchange it for a fresh access
+    // token before deciding whether the person is signed in.
+    const token = await refreshAccessToken()
+    if (!token) {
       setStatus('unauthenticated')
       return
     }

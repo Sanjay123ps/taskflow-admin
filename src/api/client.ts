@@ -2,15 +2,18 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000/api/v1'
 
-const ACCESS_TOKEN_KEY = 'taskflow_access_token'
+// Access tokens are short-lived, so they're kept in memory only (never in
+// localStorage/sessionStorage) to reduce exposure if a third-party script on
+// the page were ever compromised (XSS). The refresh token is what survives
+// a reload, and it lives in an httpOnly cookie the JS layer never touches.
+let accessToken: string | null = null
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem(ACCESS_TOKEN_KEY)
+  return accessToken
 }
 
 export function setAccessToken(token: string | null): void {
-  if (token) localStorage.setItem(ACCESS_TOKEN_KEY, token)
-  else localStorage.removeItem(ACCESS_TOKEN_KEY)
+  accessToken = token
 }
 
 export const apiClient = axios.create({
@@ -42,7 +45,7 @@ export interface ApiRequestError {
 let isRefreshing = false
 let pendingQueue: Array<() => void> = []
 
-async function refreshAccessToken(): Promise<string | null> {
+export async function refreshAccessToken(): Promise<string | null> {
   try {
     const response = await axios.post<{ success: boolean; data: { accessToken: string } }>(
       `${API_BASE_URL}/auth/refresh`,

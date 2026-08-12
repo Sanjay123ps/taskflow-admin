@@ -59,6 +59,13 @@ export function formatClockTime(value: string | null | undefined): string {
   return date.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
 }
 
+/** Masks an email address for display, e.g. "admin@taskflow.com" -> "ad***@taskflow.com". */
+export function maskEmail(email: string): string {
+  const [user, domain] = email.split('@')
+  if (!domain) return email
+  return `${user.slice(0, 2)}***@${domain}`
+}
+
 /** Formats a minute count (e.g. attendance's totalWorkingMinutes) as "8h 08m". */
 export function formatWorkingMinutes(totalMinutes: number | null | undefined): string {
   if (totalMinutes == null) return '—'

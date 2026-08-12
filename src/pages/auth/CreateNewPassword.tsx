@@ -9,7 +9,7 @@ import { PasswordInput } from '@/components/forms/PasswordInput'
 import { PasswordRequirements } from '@/components/forms/PasswordRequirements'
 import { AuthSplitLayout, AuthCard } from '@/components/auth/AuthSplitLayout'
 import { passwordSchema } from '@/lib/password'
-import { delay } from '@/lib/authMock'
+import { resetPassword } from '@/api/auth'
 
 const resetPasswordSchema = z
   .object({
@@ -26,7 +26,9 @@ type ResetPasswordValues = z.infer<typeof resetPasswordSchema>
 export default function CreateNewPassword() {
   const navigate = useNavigate()
   const location = useLocation()
-  const email = (location.state as { email?: string } | null)?.email
+  const state = location.state as { email?: string; resetToken?: string } | null
+  const email = state?.email
+  const resetToken = state?.resetToken
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const {
@@ -43,18 +45,18 @@ export default function CreateNewPassword() {
 
   // Only reachable after verifying the reset OTP — otherwise send them back
   // to start the reset flow properly.
-  if (!email) {
+  if (!email || !resetToken) {
     return <Navigate to="/admin/forgot-password" replace />
   }
 
-  const onSubmit = async () => {
+  const onSubmit = async (values: ResetPasswordValues) => {
     setSubmitError(null)
     try {
-      // Mock only — real password reset is wired up once the backend lands.
-      await delay(900)
+      await resetPassword(resetToken, values.password, values.confirmPassword)
       navigate('/admin/password-changed', { replace: true })
-    } catch {
-      setSubmitError('Something went wrong. Please try again.')
+    } catch (err) {
+      const apiError = err as { message?: string }
+      setSubmitError(apiError.message ?? 'Something went wrong. Please try again.')
     }
   }
 

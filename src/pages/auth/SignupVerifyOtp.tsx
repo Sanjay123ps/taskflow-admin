@@ -2,7 +2,8 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AuthSplitLayout } from '@/components/auth/AuthSplitLayout'
 import { OtpVerificationCard } from '@/components/auth/OtpVerificationCard'
-import { maskEmail } from '@/lib/authMock'
+import { maskEmail } from '@/lib/utils'
+import { resendAdminSignupOtp, verifyAdminSignupOtp } from '@/api/signup'
 
 export default function SignupVerifyOtp() {
   const navigate = useNavigate()
@@ -16,7 +17,9 @@ export default function SignupVerifyOtp() {
   }
 
   const handleVerified = () => {
-    toast.success('Email verified', { description: 'Your admin account is ready. Please sign in to continue.' })
+    toast.success('Email verified', {
+      description: 'Your request has been submitted. An existing admin needs to approve it before you can sign in.',
+    })
     navigate('/login', { replace: true })
   }
 
@@ -31,7 +34,9 @@ export default function SignupVerifyOtp() {
         maskedEmail={maskEmail(email)}
         backHref="/admin/signup"
         backLabel="Back to Sign Up"
+        onVerify={(code) => verifyAdminSignupOtp(email, code)}
         onVerified={handleVerified}
+        onResend={() => resendAdminSignupOtp(email).then(() => undefined)}
       />
     </AuthSplitLayout>
   )
