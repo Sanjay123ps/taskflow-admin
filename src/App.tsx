@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { queryClient } from '@/lib/queryClient'
 import { AuthProvider } from '@/context/AuthContext'
 import { ProtectedRoute } from '@/components/common/ProtectedRoute'
+import { RouteErrorBoundary } from '@/components/common/RouteErrorBoundary'
 import { Toaster } from '@/components/ui/toaster'
 
 import Login from '@/pages/auth/Login'
@@ -39,32 +40,34 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <Suspense fallback={<PageFallback />}>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/admin/signup" element={<AdminSignup />} />
-              <Route path="/admin/signup/verify-otp" element={<SignupVerifyOtp />} />
-              <Route path="/admin/forgot-password" element={<ForgotPassword />} />
-              <Route path="/admin/forgot-password/verify-otp" element={<ResetVerifyOtp />} />
-              <Route path="/admin/reset-password" element={<CreateNewPassword />} />
-              <Route path="/admin/password-changed" element={<PasswordChanged />} />
+          <RouteErrorBoundary>
+            <Suspense fallback={<PageFallback />}>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/admin/signup" element={<AdminSignup />} />
+                <Route path="/admin/signup/verify-otp" element={<SignupVerifyOtp />} />
+                <Route path="/admin/forgot-password" element={<ForgotPassword />} />
+                <Route path="/admin/forgot-password/verify-otp" element={<ResetVerifyOtp />} />
+                <Route path="/admin/reset-password" element={<CreateNewPassword />} />
+                <Route path="/admin/password-changed" element={<PasswordChanged />} />
 
-              <Route element={<ProtectedRoute />}>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/staff" element={<StaffManagement />} />
-                <Route path="/tasks/new" element={<NewTask />} />
-                <Route path="/tasks/pending" element={<PendingTasks />} />
-                <Route path="/tasks/completed" element={<CompletedTasks />} />
-                <Route path="/attendance" element={<Attendance />} />
-                <Route path="/activity" element={<ActivityLog />} />
-                <Route path="/export" element={<DataExport />} />
-                <Route path="/settings" element={<Settings />} />
-              </Route>
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/staff" element={<StaffManagement />} />
+                  <Route path="/tasks/new" element={<NewTask />} />
+                  <Route path="/tasks/pending" element={<PendingTasks />} />
+                  <Route path="/tasks/completed" element={<CompletedTasks />} />
+                  <Route path="/attendance" element={<Attendance />} />
+                  <Route path="/activity" element={<ActivityLog />} />
+                  <Route path="/export" element={<DataExport />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          <Toaster />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+            <Toaster />
+          </RouteErrorBoundary>
         </AuthProvider>
       </BrowserRouter>
       {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}

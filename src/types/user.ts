@@ -1,5 +1,6 @@
 export type UserRole = 'ADMIN' | 'STAFF'
 export type UserStatus = 'ACTIVE' | 'INACTIVE'
+export type PresenceStatus = 'ACTIVE' | 'BUSY' | 'OFFLINE'
 
 export interface StaffMember {
   id: string
@@ -13,6 +14,11 @@ export interface StaffMember {
   status: UserStatus
   profileImage: string | null
   joiningDate: string
+  // Live Active/Busy/Offline availability, set by the staff member
+  // themselves (or OFFLINE by the backend on logout/inactivity) — distinct
+  // from `status` above, which is the employment/account status.
+  presenceStatus: PresenceStatus
+  lastActiveAt: string | null
   createdAt: string
   updatedAt: string
   taskStats?: StaffTaskStats

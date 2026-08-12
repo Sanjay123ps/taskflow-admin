@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { StaffFormDialog } from '@/components/staff/StaffFormDialog'
+import { PresenceBadge } from '@/components/staff/PresenceBadge'
 import { StaffDetailModal } from '@/components/dashboard/StaffDetailModal'
 import { initials } from '@/lib/utils'
 import type { StaffMember } from '@/types/user'
@@ -181,7 +182,7 @@ export default function StaffManagement() {
             </div>
 
             {isLoading ? (
-              <TableSkeleton rows={6} cols={6} />
+              <TableSkeleton rows={6} cols={7} />
             ) : isError ? (
               <ErrorState error={error} onRetry={refetch} />
             ) : !data || data.items.length === 0 ? (
@@ -201,6 +202,7 @@ export default function StaffManagement() {
                       <TableHead>Employee ID</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Department</TableHead>
+                      <TableHead>Availability</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -220,6 +222,9 @@ export default function StaffManagement() {
                         <TableCell>{staff.employeeId}</TableCell>
                         <TableCell>{staff.email}</TableCell>
                         <TableCell>{staff.department}</TableCell>
+                        <TableCell>
+                          <PresenceBadge status={staff.presenceStatus} />
+                        </TableCell>
                         <TableCell>
                           <Badge variant={staff.status === 'ACTIVE' ? 'success' : 'neutral'} dot>
                             {staff.status === 'ACTIVE' ? 'Active' : 'Inactive'}
